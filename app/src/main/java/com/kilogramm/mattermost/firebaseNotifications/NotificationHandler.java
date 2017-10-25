@@ -1,7 +1,5 @@
 package com.kilogramm.mattermost.firebaseNotifications;
 
-import android.app.ActivityManager;
-import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -12,10 +10,10 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.kilogramm.mattermost.ApplicationLifecycleManager;
+import com.kilogramm.mattermost.MattermostPreference;
 import com.kilogramm.mattermost.R;
 import com.kilogramm.mattermost.rxtest.MainRxActivity;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -87,7 +85,7 @@ public class NotificationHandler {
             else if (type.equals(TYPE_CLEAR)){
                 handleClearNotification();
             }
-            else if (type.equals(TYPE_INFO)){
+            else if (type.equals(TYPE_INFO)){ // only for self-created notifications
                 handleInfoNotification(data);
             }
         }
@@ -128,11 +126,11 @@ public class NotificationHandler {
         notificationManager.notify(MESSAGE_ID, notification);
         incrementPendingNotificationsCount();
 
-        //request Channel TODO
-       /* if (data.containsKey(CHANNEL_ID)){
+        //request Channel
+        if (data.containsKey(CHANNEL_ID)){
             Log.i(TAG, data.get(CHANNEL_ID));
-            Left(data.get(CHANNEL_ID));
-        }*/
+            MattermostPreference.getInstance().setLastChannelId(data.get(CHANNEL_ID));
+        }
 
     }
 
