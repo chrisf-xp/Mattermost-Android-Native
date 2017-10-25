@@ -4,17 +4,26 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.kilogramm.mattermost.ApplicationLifecycleManager;
 import com.kilogramm.mattermost.MattermostPreference;
 import com.kilogramm.mattermost.R;
+import com.kilogramm.mattermost.model.entity.user.User;
+import com.kilogramm.mattermost.model.entity.user.UserRepository;
 import com.kilogramm.mattermost.rxtest.MainRxActivity;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
+import java.io.IOException;
 import java.util.Map;
+
+import static android.content.Context.NOTIFICATION_SERVICE;
 
 /**
  * Created by Christian on 23.10.2017.
@@ -51,6 +60,8 @@ public class NotificationHandler {
     private static final String FROM_WEBHOOK = "from_webhook";
 
     private static final String DELIM = "in";
+    private static final int TICKER_MESSAGE_LENGTH_MAX = 256;
+    private static final int TICKER_MESSAGE_LENGTH_CUT = 64;
 
     private NotificationHandler(Service service){
         //pendingNotificationsCount = 0;
@@ -98,31 +109,46 @@ public class NotificationHandler {
         String message = data.get(MESSAGE);
         String title = service.getResources().getString(R.string.notification_new_message_single);
 
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext());
+        // ### Number of Notifications pending
         if (pendingNotificationsCount> 0) {
             title = Integer.toString(pendingNotificationsCount+1) + " " + service.getResources().getString(R.string.notification_new_message_multiple);
+            builder.setNumber(pendingNotificationsCount+1);
         }
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext());
-        builder.setSmallIcon(R.drawable.notification_icon);
+        // ### Appearance of Notfication
+        builder.setSmallIcon(R.drawable.ic_mm_noti);
+        builder.setLargeIcon(BitmapFactory.decodeResource( service.getResources(), R.drawable.notification_icon));
+        int color = service.getResources().getColor(R.color.colorPrimary);
+        builder.setColor(color);
+        builder.setLights(color, 1000, 2000);
+        builder.setAutoCancel(true);
+        // ### Text of the Notification
         builder.setContentTitle(title);
         builder.setContentText(message);
-        builder.setAutoCancel(true);
-
-        // start Intent>
+        String tickerMes = message.substring(0, (message.length()>TICKER_MESSAGE_LENGTH_MAX ? TICKER_MESSAGE_LENGTH_CUT : message.length()) );
+        if(message.length() > TICKER_MESSAGE_LENGTH_MAX){
+            tickerMes += "...";
+        }
+        builder.setTicker(tickerMes);
+        // ### Intent
         Intent notificationIntent = new Intent(service.getApplicationContext(), MainRxActivity.class);
-
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         notificationIntent.setAction(Intent.ACTION_MAIN);
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-
         PendingIntent intent = PendingIntent.getActivity(service.getApplicationContext(), REQUEST_CODE,
                 notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        // <end Intent
-
         builder.setContentIntent(intent); //add intent to notification
-
+        // ## Build
         Notification notification = builder.build();
-        NotificationManager notificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
+        // ## Alarm set to defaults: TODO: menu to disable/enable alarms
+        notification.defaults |= Notification.DEFAULT_VIBRATE;
+        notification.defaults |= Notification.DEFAULT_SOUND;
+
+        //todo show picture of sender
+
+
+        // notify:
+        NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
         notificationManager.notify(MESSAGE_ID, notification);
         incrementPendingNotificationsCount();
 
@@ -135,7 +161,7 @@ public class NotificationHandler {
     }
 
     private void handleClearNotification(){
-        NotificationManager notificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
         notificationManager.cancel(MESSAGE_ID);
         resetPendingNotificationsCount();
     }
@@ -146,12 +172,12 @@ public class NotificationHandler {
         }
         String message = data.get(MESSAGE);
         String title =  service.getResources().getString(R.string.notification_information);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext());
-        builder.setSmallIcon(R.drawable.notification_icon);
-        builder.setContentTitle(title);
-        builder.setContentText(message);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext())
+                .setSmallIcon(R.drawable.notification_icon)
+                .setContentTitle(title)
+                .setContentText(message);
         Notification notification = builder.build();
-        NotificationManager notificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
         notificationManager.notify(INFO_ID, notification);
     }
 
