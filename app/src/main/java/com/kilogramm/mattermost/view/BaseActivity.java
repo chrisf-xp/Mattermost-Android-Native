@@ -23,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.kilogramm.mattermost.R;
+import com.kilogramm.mattermost.firebaseNotifications.NotificationHandler;
 
 import icepick.Icepick;
 import nucleus.presenter.Presenter;
@@ -191,5 +192,12 @@ public abstract class BaseActivity<P extends Presenter> extends NucleusAppCompat
         } else {
             Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //when back from background reset Notification Counter
+        NotificationHandler.clearNotificationsIfAny();
     }
 }
