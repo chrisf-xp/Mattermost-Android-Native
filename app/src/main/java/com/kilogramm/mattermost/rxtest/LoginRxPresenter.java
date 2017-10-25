@@ -13,6 +13,7 @@ import android.util.Patterns;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
 import com.kilogramm.mattermost.MattermostPreference;
 import com.kilogramm.mattermost.model.entity.ClientCfg;
@@ -188,11 +189,12 @@ public class LoginRxPresenter extends BaseRxPresenter<LoginRxActivity> {
     }
 
     private void initRequestLogin() {
+        String device_id = FirebaseInstanceId.getInstance().getToken();
         restartableFirst(REQUEST_LOGIN, () -> {
             sendHideKeyboard();
             isVisibleProgress.set(View.VISIBLE);
             return ServerMethod.getInstance()
-                    .login(new LoginData(mEditEmail, mEditPassword, ""))
+                    .login(new LoginData(mEditEmail, mEditPassword, "", "android:" + device_id))
                     .cache()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread());

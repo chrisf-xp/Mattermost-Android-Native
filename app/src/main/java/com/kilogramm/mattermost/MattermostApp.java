@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
 import com.facebook.stetho.Stetho;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.kilogramm.mattermost.model.entity.InitObject;
 import com.kilogramm.mattermost.model.entity.LicenseCfg;
 import com.kilogramm.mattermost.model.entity.Preference.Preferences;
@@ -92,6 +93,8 @@ public class MattermostApp extends MultiDexApplication {
                 .enableDumpapp(Stetho.defaultDumperPluginsProvider(this))
                 .build());
 
+        keepDeviceTokenUpToDate();
+        registerActivityLifecycleCallbacks(new ApplicationLifecycleManager());
 
         ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this)
                 .diskCacheExtraOptions(300, 300, bitmap -> null)
@@ -187,5 +190,23 @@ public class MattermostApp extends MultiDexApplication {
     public static void showMainRxActivity() {
         MainRxActivity.start(MattermostApp.getSingleton().getApplicationContext(),
                 Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+    }
+
+
+    public static void keepDeviceTokenUpToDate(){
+        try {
+            String newDeviceToken = FirebaseInstanceId.getInstance().getToken(); // don't get confused. getToken() from firebase means deviceToken not Auth-Token
+            //Log.d("new device TOKEN", newDeviceToken);
+            String currDeviceToken = MattermostPreference.getInstance().getDeviceToken();
+            //Log.d("old device TOKEN", currDeviceToken);
+
+            if (newDeviceToken != null && !newDeviceToken.equals(currDeviceToken)) {
+                Log.d("NEW DEVICE TOKEN", newDeviceToken);
+                MattermostPreference.getInstance().setDeviceToken(newDeviceToken); //
+                MattermostPreference.getInstance().setAuthToken("expired16iyguj1kejdtp6test"); // to force a relog
+            }
+        } catch (Exception e){
+            Log.e("DEVICE TOKEN", e.getMessage());
+        }
     }
 }

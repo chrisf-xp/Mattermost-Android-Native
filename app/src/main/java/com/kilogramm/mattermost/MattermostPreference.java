@@ -31,6 +31,7 @@ public class MattermostPreference {
     private static final String TEAM_ID = "team_id";
     private static final String SITE_NAME = "site_name";
     private static final String MY_E_MAIL = "my_e_mail";
+    private static final String DEVICE_TOKEN = "my_device_token";
 
     public MattermostPreference(Context context) {
         sharedPreferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
@@ -41,6 +42,14 @@ public class MattermostPreference {
             instance = new MattermostPreference(context);
 
         return instance;
+    }
+
+    public String getDeviceToken() {
+        return sharedPreferences.getString(DEVICE_TOKEN, null);
+    }
+
+    public void setDeviceToken(String deviceToken) {
+        sharedPreferences.edit().putString(DEVICE_TOKEN, deviceToken).apply();
     }
 
     public String getMyEMail() {
