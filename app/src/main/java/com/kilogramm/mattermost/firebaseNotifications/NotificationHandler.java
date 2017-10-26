@@ -38,6 +38,7 @@ import static android.support.v4.app.NotificationCompat.DEFAULT_VIBRATE;
 public class NotificationHandler {
 
     private static NotificationHandler singleton = null;
+    private Target mTarget; //for picture update
 
     private static int pendingNotificationsCount = 0;
     private Service service;
@@ -186,8 +187,50 @@ public class NotificationHandler {
                 .setDefaults(DEFAULT_LIGHTS) //TODO: menu to disable/enable alarms
                 .setDefaults(DEFAULT_SOUND)
                 .setDefaults(DEFAULT_VIBRATE);
-        //todo show picture of sender // ask data contains, and maybe only with direct messages
+
+        //todo show picture of sender // maybe only with direct messages
+        // picture of sender can sometimes be wrong with different requests at the same time, because we can't
+        // predict witch thread gets done... so i should implement something to stop old threads when new one comes
+        if (senderId != null){
+             try{
+                 new Handler(Looper.getMainLooper()).post(new Runnable(){
+                     @Override
+                     public void run(){getUserPicture(senderId, builder);}
+                 });
+             }catch (Exception e){
+                 Log.i(TAG, e.getMessage());
+             }
+         }
 
         return builder.build();
+    }
+
+    private void getUserPicture(String userId, NotificationCompat.Builder builder){
+        User user = UserRepository.query(new UserRepository.UserByIdSpecification(userId)).first();
+        mTarget = new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                builder.setLargeIcon(bitmap);
+                // send the notification again to update it w/ the right image
+                ((NotificationManager) (service.getSystemService(NOTIFICATION_SERVICE)))
+                        .notify(MESSAGE_ID, builder.build());
+            }
+
+            @Override
+            public void onBitmapFailed(Drawable errorDrawable) {}
+
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {}
+        };
+        Picasso.with(service.getApplicationContext()).load(getAvatarUrl(user)).into(mTarget);
+    }
+
+    public String getAvatarUrl(User user) {
+        return "https://"
+                + MattermostPreference.getInstance().getBaseUrl()
+                + "/api/v3/users/"
+                + user.getId()
+                + "/image?time="
+                + user.getLastPictureUpdate();
     }
 }
