@@ -16,17 +16,17 @@ import android.util.Log;
 import com.kilogramm.mattermost.ApplicationLifecycleManager;
 import com.kilogramm.mattermost.MattermostPreference;
 import com.kilogramm.mattermost.R;
+import com.kilogramm.mattermost.model.entity.notifyProps.NotifyProps;
+import com.kilogramm.mattermost.model.entity.notifyProps.NotifyRepository;
 import com.kilogramm.mattermost.model.entity.user.User;
 import com.kilogramm.mattermost.model.entity.user.UserRepository;
 import com.kilogramm.mattermost.rxtest.MainRxActivity;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
-import static android.support.v4.app.NotificationCompat.DEFAULT_ALL;
 import static android.support.v4.app.NotificationCompat.DEFAULT_LIGHTS;
 import static android.support.v4.app.NotificationCompat.DEFAULT_SOUND;
 import static android.support.v4.app.NotificationCompat.DEFAULT_VIBRATE;
@@ -94,7 +94,7 @@ public class NotificationHandler {
         Log.d(TAG, data.get(MESSAGE));
         //end debug
 
-        if (data.containsKey(TYPE) && !ApplicationLifecycleManager.isAppVisible()){
+        if (data.containsKey(TYPE) && !ApplicationLifecycleManager.isAppVisible()){ // test if app in background
             String type = data.get(TYPE);
             if (type.equals(TYPE_MESSAGE)){
                 Log.i(TAG, "handle a Message Notification");
@@ -173,6 +173,14 @@ public class NotificationHandler {
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         PendingIntent intent = PendingIntent.getActivity(service.getApplicationContext(), REQUEST_CODE,
                 notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        // ### Alarm
+        NotifyProps notifyProps = new NotifyProps(NotifyRepository.query().first());
+        Boolean vibrationOn = notifyProps.getVibration().equals("true");
+        Boolean soundOn = notifyProps.getSound().equals("true");
+        int alarmSetting = 0;
+        if (vibrationOn) alarmSetting |= DEFAULT_VIBRATE;
+        if (soundOn) alarmSetting |= DEFAULT_SOUND;
+        if (vibrationOn || soundOn) alarmSetting |= DEFAULT_LIGHTS;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext())
                 .setNumber(pendingNotificationsCount+1)
@@ -184,13 +192,14 @@ public class NotificationHandler {
                 .setContentText(message)
                 .setTicker(tickerMes)
                 .setContentIntent(intent)
-                .setDefaults(DEFAULT_LIGHTS) //TODO: menu to disable/enable alarms
-                .setDefaults(DEFAULT_SOUND)
-                .setDefaults(DEFAULT_VIBRATE);
+                .setDefaults(alarmSetting);
 
-        //todo show picture of sender // maybe only with direct messages
-        // picture of sender can sometimes be wrong with different requests at the same time, because we can't
-        // predict witch thread gets done... so i should implement something to stop old threads when new one comes
+
+        //todo
+        // show picture of sender // maybe only with direct messages
+        // picture of sender can sometimes be wrong with different requests at the same time,
+        // because we can't predict which thread gets done... so i should implement something to
+        // stop old threads when a new one comes
         if (senderId != null){
              try{
                  new Handler(Looper.getMainLooper()).post(new Runnable(){
