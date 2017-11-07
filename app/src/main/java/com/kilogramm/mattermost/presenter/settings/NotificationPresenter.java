@@ -118,6 +118,44 @@ public class NotificationPresenter extends BaseRxPresenter<NotificationActivity>
         mNotifyProps.setEmail(setting);
     }
 
+    public String getSoundSetting() {
+        String sound = mNotifyProps.getSound();
+        if (sound != null && sound.equals("true"))
+            return "Sound";
+        return "false";
+    }
+
+    public String getVibrationSetting() {
+        String vibration = mNotifyProps.getVibration();
+        if (vibration != null && vibration.equals("true"))
+            return "Vibration";
+        return "false";
+    }
+
+    public void toggleSoundSetting(){
+        String sound = mNotifyProps.getSound();
+        if (sound != null && sound.equals("true"))
+            mNotifyProps.setSound("false");
+        else
+            mNotifyProps.setSound("true");
+    }
+
+    public void toggleVibrationSetting(){
+        String vibration = mNotifyProps.getVibration();
+        if (vibration != null && vibration.equals("true"))
+            mNotifyProps.setVibration("false");
+        else
+            mNotifyProps.setVibration("true");
+    }
+
+    public void setSoundSetting(String setting) { //todo delete
+        mNotifyProps.setSound(setting);
+    }
+
+    public void setVibrationSetting(String setting) { // todo delete
+        mNotifyProps.setVibration(setting);
+    }
+
     public void setPushSetting(String push) {
         mNotifyProps.setPush(push);
     }

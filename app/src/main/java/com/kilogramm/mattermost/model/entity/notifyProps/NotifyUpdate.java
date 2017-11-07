@@ -43,6 +43,12 @@ public class NotifyUpdate implements Parcelable {
     @SerializedName("push_status")
     @Expose
     private String push_status;
+    @SerializedName("sound")
+    @Expose
+    private String sound; // sound, Notification Alarm
+    @SerializedName("vibration")
+    @Expose
+    private String vibration; // vibration, Notification Alarm
 
 
     public NotifyUpdate(NotifyProps props, String user_id) {
@@ -57,6 +63,8 @@ public class NotifyUpdate implements Parcelable {
         this.push_status = props.getPushStatus() != null ? props.getPushStatus() : "away";
         this.comments = props.getComments() != null ? props.getComments() : "never";
         this.user_id = user_id;
+        this.sound = props.getSound() !=null ? props.getSound() : "sound";
+        this.vibration = props.getVibration() !=null ? props.getVibration() : "vibration";
     }
 
     public NotifyUpdate() {
@@ -80,6 +88,8 @@ public class NotifyUpdate implements Parcelable {
         dest.writeString(this.mention_keys);
         dest.writeString(this.push);
         dest.writeString(this.push_status);
+        dest.writeString(this.sound);
+        dest.writeString(this.vibration);
     }
 
     protected NotifyUpdate(Parcel in) {
@@ -94,6 +104,8 @@ public class NotifyUpdate implements Parcelable {
         this.mention_keys = in.readString();
         this.push = in.readString();
         this.push_status = in.readString();
+        this.sound = in.readString();
+        this.vibration = in.readString();
     }
 
     public static final Creator<NotifyUpdate> CREATOR = new Creator<NotifyUpdate>() {

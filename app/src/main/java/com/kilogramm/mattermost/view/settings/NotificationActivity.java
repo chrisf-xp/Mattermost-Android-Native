@@ -26,6 +26,7 @@ public class NotificationActivity extends BaseActivity<NotificationPresenter> {
     private NotificationFragment mNotificationFragment;
     private NotificationEmailFragment mNotificationEmailFragment;
     private NotificationPushFragment mNotificationPushFragment;
+    private NotificationAlarmFragment mNotificationAlarmFragment;
 
     MenuItem mSaveItem;
 
@@ -124,6 +125,16 @@ public class NotificationActivity extends BaseActivity<NotificationPresenter> {
                 .replace(mBinding.fragmentLayoutNotification.getId(), mNotificationEmailFragment)
                 .commit();
         mBinding.fragmentLayoutNotification.setTag("NotificationEmailFragment");
+    }
+
+    public void openAlarmNotification() {
+        setupToolbar("Alarm notifications", true);
+        if (mNotificationAlarmFragment == null)
+            mNotificationAlarmFragment = new NotificationAlarmFragment();
+        getFragmentManager().beginTransaction()
+                .replace(mBinding.fragmentLayoutNotification.getId(), mNotificationAlarmFragment)
+                .commit();
+        mBinding.fragmentLayoutNotification.setTag("NotificationAlarmFragment");
     }
 
     public void requestSave(String s) {

@@ -43,6 +43,10 @@ public class NotificationFragment extends BaseFragment<NotificationPresenter> {
         mBinding.cardViewEmail.setOnClickListener(view1 ->
                 ((NotificationActivity) getActivity()).openEmailNotification());
 
+        mBinding.cardViewAlarm.setOnClickListener(view1 ->
+                ((NotificationActivity) getActivity()).openAlarmNotification());
+        mBinding.textViewAlarmSetting.setText(getAlarmNotificationsSettingDescription());
+
         mBinding.textViewDescriptionWordsTrigger.setText(getPresenter().getMentionsAll());
         mBinding.textViewDescriptionMobPush.setText(getMobPushNotificationDescriptions());
         mBinding.textViewEmailSetting.setText(getPresenter().getEmailSetting());
@@ -97,6 +101,22 @@ public class NotificationFragment extends BaseFragment<NotificationPresenter> {
         }
 
         return pushStatus!=null?String.format("%s when %s", pushSetting, pushStatus.toLowerCase()):String.format("%s", pushSetting==null?"":pushSetting);
+    }
+
+    public String getAlarmNotificationsSettingDescription() {
+        String Setting;
+        String soundSet = getPresenter().getSoundSetting();
+        String vibrationSet = getPresenter().getVibrationSetting();
+        if (soundSet.equals("Sound") && !vibrationSet.equals("Vibration")){
+            Setting = "Sound Alarm";
+        } else if (!soundSet.equals("Sound") && vibrationSet.equals("Vibration")) {
+            Setting = "Vibration Alarm";
+        } else if (soundSet.equals("Sound") && vibrationSet.equals("Vibration")){
+            Setting = "Sound and Vibration Alarm";
+        } else {
+            Setting = "Alarm off";
+        }
+        return Setting;
     }
 }
 

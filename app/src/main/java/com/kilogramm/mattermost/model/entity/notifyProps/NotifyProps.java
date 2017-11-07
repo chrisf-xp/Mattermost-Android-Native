@@ -46,6 +46,28 @@ public class NotifyProps extends RealmObject implements Parcelable {
     @SerializedName("push_status")
     @Expose
     private String pushStatus;
+    @SerializedName("sound")
+    @Expose
+    private String sound; // sound, Notification Alarm
+    @SerializedName("vibration")
+    @Expose
+    private String vibration; // vibration, Notification Alarm
+
+    public String getSound() {
+        return sound;
+    }
+
+    public void setSound(String sound) {
+        this.sound = sound;
+    }
+
+    public String getVibration() {
+        return vibration;
+    }
+
+    public void setVibration(String vibration) {
+        this.vibration = vibration;
+    }
 
     public long getId() {
         return id;
@@ -187,6 +209,8 @@ public class NotifyProps extends RealmObject implements Parcelable {
         this.comments = props.getComments();
         this.push = props.getPush();
         this.pushStatus = props.getPushStatus();
+        this.sound = props.getSound();
+        this.vibration = props.getVibration();
     }
 
     public NotifyProps() {
@@ -210,6 +234,8 @@ public class NotifyProps extends RealmObject implements Parcelable {
         dest.writeString(this.mentionKeys);
         dest.writeString(this.push);
         dest.writeString(this.pushStatus);
+        dest.writeString(this.sound);
+        dest.writeString(this.vibration);
     }
 
     protected NotifyProps(Parcel in) {
@@ -224,6 +250,8 @@ public class NotifyProps extends RealmObject implements Parcelable {
         this.mentionKeys = in.readString();
         this.push = in.readString();
         this.pushStatus = in.readString();
+        this.sound = in.readString();
+        this.vibration = in.readString();
     }
 
     public static final Creator<NotifyProps> CREATOR = new Creator<NotifyProps>() {
