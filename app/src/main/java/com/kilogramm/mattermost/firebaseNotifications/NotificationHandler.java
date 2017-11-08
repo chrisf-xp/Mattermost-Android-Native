@@ -24,6 +24,8 @@ import com.kilogramm.mattermost.rxtest.MainRxActivity;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
@@ -41,6 +43,7 @@ public class NotificationHandler {
     private Target mTarget; //for picture update
 
     private static int pendingNotificationsCount = 0;
+    private static List<String> lastFivePendingNoti = new LinkedList<>();
     private Service service;
 
     private static final String TAG = "NOTIFICATION-HANDLER";
@@ -52,6 +55,7 @@ public class NotificationHandler {
     private static final String TYPE_MESSAGE = "message";
     private static final String TYPE_CLEAR = "clear";
     private static final String TYPE_INFO = "info";
+    private static final String TYPE_UPDATE = "update";
 
     private static final String TYPE = "type";
     private static final String BADGE = "badge";
@@ -119,10 +123,12 @@ public class NotificationHandler {
             title = Integer.toString(pendingNotificationsCount+1) + " " + service.getResources().getString(R.string.notification_new_message_multiple);
         }
 
+        incrementPendingNotificationsCount();
+        addPendingNotification(message);
+
         // notify:
         NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
         notificationManager.notify(MESSAGE_ID, buildMyNotification(title, message, data.get(SENDER_ID)));
-        incrementPendingNotificationsCount();
 
         //request Channel
         if (data.containsKey(CHANNEL_ID)){
@@ -136,6 +142,7 @@ public class NotificationHandler {
         NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
         notificationManager.cancel(MESSAGE_ID);
         resetPendingNotificationsCount();
+        resetLastFivePendingNoti();
     }
 
     private void handleInfoNotification(Map<String, String> data){
@@ -159,6 +166,17 @@ public class NotificationHandler {
     public void resetPendingNotificationsCount(){
         pendingNotificationsCount = 0;
     }
+    public void addPendingNotification(String line){
+        if (lastFivePendingNoti.size() < 5){
+            lastFivePendingNoti.add(line);
+        }else {
+            lastFivePendingNoti.remove(0);
+            lastFivePendingNoti.add(line);
+        }
+    }
+    public void resetLastFivePendingNoti(){
+        lastFivePendingNoti.clear();
+    }
 
     private Notification buildMyNotification(String title, String message, String senderId){
         int color = service.getResources().getColor(R.color.colorPrimary);
@@ -172,7 +190,7 @@ public class NotificationHandler {
         notificationIntent.setAction(Intent.ACTION_MAIN);
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         PendingIntent intent = PendingIntent.getActivity(service.getApplicationContext(), REQUEST_CODE,
-                notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT); // from only UPDATE_CURRENT may have fixed bug that sometimes lead to a not working intent
         // ### Alarm
         NotifyProps notifyProps = new NotifyProps(NotifyRepository.query().first());
         Boolean vibrationOn = notifyProps.getVibration().equals("true");
@@ -183,7 +201,7 @@ public class NotificationHandler {
         if (vibrationOn || soundOn) alarmSetting |= DEFAULT_LIGHTS;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext())
-                .setNumber(pendingNotificationsCount+1)
+                .setNumber(pendingNotificationsCount)
                 .setSmallIcon(R.drawable.ic_mm_noti)
                 .setLargeIcon(BitmapFactory.decodeResource( service.getResources(), R.drawable.notification_icon))
                 .setColor(color)
@@ -194,6 +212,17 @@ public class NotificationHandler {
                 .setContentIntent(intent)
                 .setDefaults(alarmSetting);
 
+        // ### Big notifications: (android 4.1 and later)
+        NotificationCompat.InboxStyle bigStyle = new NotificationCompat.InboxStyle();
+        for (String line: lastFivePendingNoti){
+            bigStyle.addLine(line);
+        }
+        if (pendingNotificationsCount - lastFivePendingNoti.size() > 0){
+            bigStyle.setSummaryText("+" + (pendingNotificationsCount - lastFivePendingNoti.size())
+                    + " " + service.getResources().getString(R.string.notification_plus_x_more) );
+        }
+        //bigStyle.setBigContentTitle(title);
+        builder.setStyle(bigStyle);
 
         //todo
         // show picture of sender // maybe only with direct messages

@@ -109,9 +109,11 @@
     <string name="notification_email">Email notifications</string>
     <string name="notification_alarm">Alarm</string>
     <string name="notification_words_channel_mention">\"@channel\",\"@all\"</string>
-    <string name="notification_new_message_single">New message</string>
+
+    <string name="notification_new_message_single">A new message</string>
     <string name="notification_new_message_multiple">new messages</string>
     <string name="notification_information">Information</string>
+    <string name="notification_plus_x_more"> more</string>
 
     <string name="tag_notificationFragment">notificationFragment</string>
     <string name="tag_notificationPushFragment">notificationPushFragment</string>
