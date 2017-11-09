@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
@@ -49,13 +50,15 @@ public class NotificationHandler {
     private static final String TAG = "NOTIFICATION-HANDLER";
 
     private static final int MESSAGE_ID = 77698383;
-    private static final int INFO_ID = 73787079;
+    private static final int UPDATE_ID = 73787079;
     private static final int REQUEST_CODE = 1722;
+    private static final int UPDATE_CODE = 1723;
 
     private static final String TYPE_MESSAGE = "message";
     private static final String TYPE_CLEAR = "clear";
-    private static final String TYPE_INFO = "info";
+
     private static final String TYPE_UPDATE = "update";
+    private static final String LINK = "link";
 
     private static final String TYPE = "type";
     private static final String BADGE = "badge";
@@ -98,18 +101,21 @@ public class NotificationHandler {
         Log.d(TAG, data.get(MESSAGE));
         //end debug
 
-        if (data.containsKey(TYPE) && !ApplicationLifecycleManager.isAppVisible()){ // test if app in background
-            String type = data.get(TYPE);
-            if (type != null && type.equals(TYPE_MESSAGE)){
+        if (!data.containsKey(TYPE))return;
+        String type = data.get(TYPE);
+
+        if (!ApplicationLifecycleManager.isAppVisible()){ // test if app in background
+            if (type.equals(TYPE_MESSAGE)){
                 Log.i(TAG, "handle a Message Notification");
                 handleMessageNotification(data);
             }
-            else if (type != null && type.equals(TYPE_CLEAR)){
+            else if (type.equals(TYPE_CLEAR)){
                 handleClearNotification();
             }
-            else if (type != null && type.equals(TYPE_INFO)){ // only for self-created notifications
-                handleInfoNotification(data);
-            }
+        }
+        // for notifications also available when app in foreground
+        if (type.equals(TYPE_UPDATE)){
+            handleUpdateNotification(data);
         }
     }
 
@@ -145,19 +151,30 @@ public class NotificationHandler {
         resetLastFivePendingNoti();
     }
 
-    private void handleInfoNotification(Map<String, String> data){
-        if (!data.containsKey(MESSAGE)){
+    private void handleUpdateNotification(Map<String, String> data){
+        if (!data.containsKey(LINK)){
             return;
         }
-        String message = data.get(MESSAGE);
-        String title =  service.getResources().getString(R.string.notification_information);
+        String link = data.get(LINK);
+        String title = service.getResources().getString(R.string.notification_update);
+
+        //## Intent to open Link
+        Intent notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+        notificationIntent.setData(Uri.parse(link));
+        PendingIntent pendingIntent = PendingIntent.getActivity(service.getApplicationContext(),
+                UPDATE_CODE, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext())
-                .setSmallIcon(R.drawable.notification_icon)
+                .setLargeIcon(BitmapFactory.decodeResource( service.getResources(), R.drawable.notification_icon))
+                .setSmallIcon(R.drawable.ic_mm_noti)
                 .setContentTitle(title)
-                .setContentText(message);
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+        if (data.containsKey(MESSAGE)) builder.setContentText(data.get(MESSAGE));
+
         Notification notification = builder.build();
         NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(INFO_ID, notification);
+        notificationManager.notify(UPDATE_ID, notification);
     }
 
     public void incrementPendingNotificationsCount(){
