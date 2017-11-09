@@ -100,14 +100,14 @@ public class NotificationHandler {
 
         if (data.containsKey(TYPE) && !ApplicationLifecycleManager.isAppVisible()){ // test if app in background
             String type = data.get(TYPE);
-            if (type.equals(TYPE_MESSAGE)){
+            if (type != null && type.equals(TYPE_MESSAGE)){
                 Log.i(TAG, "handle a Message Notification");
                 handleMessageNotification(data);
             }
-            else if (type.equals(TYPE_CLEAR)){
+            else if (type != null && type.equals(TYPE_CLEAR)){
                 handleClearNotification();
             }
-            else if (type.equals(TYPE_INFO)){ // only for self-created notifications
+            else if (type != null && type.equals(TYPE_INFO)){ // only for self-created notifications
                 handleInfoNotification(data);
             }
         }
@@ -193,8 +193,12 @@ public class NotificationHandler {
                 notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT); // from only UPDATE_CURRENT may have fixed bug that sometimes lead to a not working intent
         // ### Alarm
         NotifyProps notifyProps = new NotifyProps(NotifyRepository.query().first());
-        Boolean vibrationOn = notifyProps.getVibration().equals("true");
-        Boolean soundOn = notifyProps.getSound().equals("true");
+        String vibrationString = notifyProps.getVibration();
+        String soundString = notifyProps.getVibration();
+        Boolean vibrationOn = false;
+        Boolean soundOn = false;
+        if (vibrationString != null) vibrationOn = vibrationString.equals("true");
+        if (soundString != null) soundOn = soundString.equals("true");
         int alarmSetting = 0;
         if (vibrationOn) alarmSetting |= DEFAULT_VIBRATE;
         if (soundOn) alarmSetting |= DEFAULT_SOUND;
