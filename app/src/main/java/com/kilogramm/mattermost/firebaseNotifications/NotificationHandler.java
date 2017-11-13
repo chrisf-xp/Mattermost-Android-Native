@@ -133,9 +133,10 @@ public class NotificationHandler {
         addPendingNotification(message);
 
         // notify:
+        PictureUpdate picUpdate = new PictureUpdate();
         NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(MESSAGE_ID, buildMyNotification(title, message, data.get(SENDER_ID)));
-
+        notificationManager.notify(MESSAGE_ID, buildMyNotification(title, message, data.get(SENDER_ID), picUpdate));
+        picUpdate.setNotificationSent();
         //request Channel
         if (data.containsKey(CHANNEL_ID)){
             Log.i(TAG, data.get(CHANNEL_ID));
@@ -195,7 +196,7 @@ public class NotificationHandler {
         lastFivePendingNoti.clear();
     }
 
-    private Notification buildMyNotification(String title, String message, String senderId){
+    private Notification buildMyNotification(String title, String message, String senderId, PictureUpdate picUpdate){
         int color = service.getResources().getColor(R.color.colorPrimary);
         String tickerMes = message.substring(0, (message.length()>TICKER_MESSAGE_LENGTH_MAX ? TICKER_MESSAGE_LENGTH_CUT : message.length()) );
         if(message.length() > TICKER_MESSAGE_LENGTH_MAX){
@@ -254,7 +255,7 @@ public class NotificationHandler {
              try{
                  new Handler(Looper.getMainLooper()).post(new Runnable(){
                      @Override
-                     public void run(){getUserPicture(senderId, builder);}
+                     public void run(){getUserPicture(senderId, builder, picUpdate);}
                  });
              }catch (Exception e){
                  Log.i(TAG, e.getMessage());
@@ -264,15 +265,26 @@ public class NotificationHandler {
         return builder.build();
     }
 
-    private void getUserPicture(String userId, NotificationCompat.Builder builder){
+    private void getUserPicture(String userId, NotificationCompat.Builder builder, PictureUpdate picUpdate){
         User user = UserRepository.query(new UserRepository.UserByIdSpecification(userId)).first();
         mTarget = new Target() {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                 builder.setLargeIcon(bitmap);
                 // send the notification again to update it w/ the right image
-                ((NotificationManager) (service.getSystemService(NOTIFICATION_SERVICE)))
-                        .notify(MESSAGE_ID, builder.build());
+                for (int sleepCount = 32; sleepCount < 4000; sleepCount*=2){
+                    try{
+                        Thread.sleep(sleepCount);
+                    }catch (InterruptedException e){
+                        Log.i(TAG, e.getMessage());
+                    }
+                    if (picUpdate.isNotificationSent()){
+                        builder.setDefaults(0);
+                        ((NotificationManager) (service.getSystemService(NOTIFICATION_SERVICE)))
+                                .notify(MESSAGE_ID, builder.build());
+                        return;
+                    }
+                }
             }
 
             @Override
@@ -291,5 +303,15 @@ public class NotificationHandler {
                 + user.getId()
                 + "/image?time="
                 + user.getLastPictureUpdate();
+    }
+
+    private class PictureUpdate{
+        private boolean notificationSent = false;
+        public synchronized boolean isNotificationSent(){
+            return notificationSent;
+        }
+        public synchronized void setNotificationSent(){
+            notificationSent = true;
+        }
     }
 }
