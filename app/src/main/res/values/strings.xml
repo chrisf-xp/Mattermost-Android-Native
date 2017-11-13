@@ -113,6 +113,7 @@
     <string name="notification_new_message_single">A new message</string>
     <string name="notification_new_message_multiple">new messages</string>
     <string name="notification_information">Information</string>
+    <string name="notification_update">Update available</string>
     <string name="notification_plus_x_more"> more</string>
 
     <string name="tag_notificationFragment">notificationFragment</string>
