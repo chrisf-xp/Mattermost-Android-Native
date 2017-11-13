@@ -8,6 +8,7 @@ import com.kilogramm.mattermost.MattermostApp;
 import com.kilogramm.mattermost.MattermostPreference;
 import com.kilogramm.mattermost.model.entity.Preference.PreferenceRepository;
 import com.kilogramm.mattermost.model.entity.channel.ChannelRepository;
+import com.kilogramm.mattermost.model.entity.channel.ChannelView;
 import com.kilogramm.mattermost.model.entity.member.MembersRepository;
 import com.kilogramm.mattermost.model.entity.post.PostRepository;
 import com.kilogramm.mattermost.model.entity.userstatus.AllRemove;
@@ -47,7 +48,7 @@ public class MattermostNotificationManager {
             case WebSocketObj.EVENT_POSTED:
                 String channelId = webSocketObj.getData().getPost().getChannelId();
                 if (channelId.equals(MattermostPreference.getInstance().getLastChannelId())) {
-                    requestUpdateLastViewedAt(webSocketObj.getChannelId());
+                    requestChannelView(webSocketObj.getChannelId());
                 } else {
                     requestGetChannel(channelId);
                 }
@@ -85,10 +86,17 @@ public class MattermostNotificationManager {
         }
     }
 
+    /* REMOVED FROM API IN 3.8 use ChannelView
     private void requestUpdateLastViewedAt(String channelId) {
         MattermostApp.getSingleton()
                 .getMattermostRetrofitService()
                 .updatelastViewedAt(MattermostPreference.getInstance().getTeamId(), channelId);
+    }*/
+
+    private void requestChannelView(String channelId) {
+        MattermostApp.getSingleton()
+                .getMattermostRetrofitService()
+                .channelView(MattermostPreference.getInstance().getTeamId(), new ChannelView(channelId));
     }
 
     private void requestGetChannel(String channelId) {

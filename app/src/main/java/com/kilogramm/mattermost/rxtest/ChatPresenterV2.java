@@ -10,6 +10,7 @@ import com.kilogramm.mattermost.MattermostApp;
 import com.kilogramm.mattermost.MattermostPreference;
 import com.kilogramm.mattermost.model.entity.Posts;
 import com.kilogramm.mattermost.model.entity.channel.ChannelRepository;
+import com.kilogramm.mattermost.model.entity.channel.ChannelView;
 import com.kilogramm.mattermost.model.entity.filetoattacth.FileInfo;
 import com.kilogramm.mattermost.model.entity.filetoattacth.FileInfoRepository;
 import com.kilogramm.mattermost.model.entity.filetoattacth.FileToAttachRepository;
@@ -50,13 +51,14 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
     private static final int REQUEST_LOAD_BEFORE = 3;
     private static final int REQUEST_LOAD_AFTER = 4;
     private static final int REQUEST_LOAD_FIRST_PAGE = 5;
-    private static final int REQUEST_UPDATE_LAST_VIEWED_AT = 6;
+    //private static final int REQUEST_UPDATE_LAST_VIEWED_AT = 6; // REMOVED FROM API IN 3.8 use ChannelView
     private static final int REQUEST_DELETE_POST = 7;
     private static final int REQUEST_EDIT_POST = 8;
     private static final int REQUEST_SEND_TO_SERVER = 9;
     private static final int REQUEST_HTTP_GETUSERS = 10;
     private static final int REQUEST_SEND_COMMAND = 11;
     //private static final int REQUEST_SEND_TO_SERVER_ERROR = 10;
+    private static final int REQUEST_CHANNEL_VIEW = 12;
 
 
     private String mChannelType;
@@ -98,7 +100,7 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
         initLoadBefore();
         initLoadAfter();
         initLoadPosts();
-        initUpdateLastViewedAt();
+        initChannelView(); // replaces initUpdateLastViewedAt();
         initDeletePost();
         initEditPost();
         initSendToServer();
@@ -278,7 +280,7 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
                             @Override
                             public void onCompleted() {
                                 ChatUtils.mergePosts(posts, mChannelId);
-                                startRequestUpdateLastViewedAt();
+                                startRequestChannelView();
                                 sendEnableTopPagination();
                                 sendRefreshing(false);
                                 sendVisiblePrograssBar(false);
@@ -295,7 +297,7 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
                                     sendError(error);
                                 }
                                 ChatUtils.mergePosts(posts, mChannelId);
-                                startRequestUpdateLastViewedAt();
+                                startRequestChannelView();
                                 sendRefreshing(false);
                                 sendEnableTopPagination();
                                 sendVisiblePrograssBar(false);
@@ -324,6 +326,7 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
                 });
     }
 
+    /* REMOVED FROM API IN 3.8 see ChannelView
     private void initUpdateLastViewedAt() {
         restartableFirst(REQUEST_UPDATE_LAST_VIEWED_AT, () ->
                         ServerMethod.getInstance()
@@ -335,6 +338,20 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
                     sendError(parceError(throwable, null));
                     throwable.printStackTrace();
                     Log.d(TAG, "Error");
+                });
+    }*/
+
+    private void initChannelView() {
+        restartableFirst(REQUEST_CHANNEL_VIEW, () ->
+                        ServerMethod.getInstance()
+                                .channelView(mTeamId, new ChannelView(mChannelId))
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(Schedulers.io()),
+                (chatRxFragment, post) -> {
+                }, (chatRxFragment1, throwable) -> {
+                    sendError(parceError(throwable, null));
+                    throwable.printStackTrace();
+                    Log.d(TAG, "Error Channel View");
                 });
     }
 
@@ -394,7 +411,7 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
                     } else {
                         Log.d(TAG, "initSendToServer: post pending id not found");
                     }*/
-                    startRequestUpdateLastViewedAt();
+                    startRequestChannelView();
                     // sendOnItemAdded();
                     sendShowList();
                     FileToAttachRepository.getInstance().deleteUploadedFiles();
@@ -505,8 +522,13 @@ public class ChatPresenterV2 extends BaseRxPresenter<ChatFragmentV2> {
         }
     }
 
+    /* REMOVED FROM API IN 3.8 see ChannelView
     public void startRequestUpdateLastViewedAt() {
         start(REQUEST_UPDATE_LAST_VIEWED_AT);
+    }*/
+
+    public void startRequestChannelView(){
+        start(REQUEST_CHANNEL_VIEW);
     }
 
     /**

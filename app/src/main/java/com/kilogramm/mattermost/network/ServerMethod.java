@@ -5,6 +5,7 @@ import com.kilogramm.mattermost.model.entity.Posts;
 import com.kilogramm.mattermost.model.entity.Preference.Preferences;
 import com.kilogramm.mattermost.model.entity.SearchParams;
 import com.kilogramm.mattermost.model.entity.channel.Channel;
+import com.kilogramm.mattermost.model.entity.channel.ChannelView;
 import com.kilogramm.mattermost.model.entity.filetoattacth.FileInfo;
 import com.kilogramm.mattermost.model.entity.notifyProps.NotifyUpdate;
 import com.kilogramm.mattermost.model.entity.post.Post;
@@ -129,8 +130,13 @@ public class ServerMethod {
         return mApi.sendPost(teamId, channelId, post);
     }
 
+    /* REMOVED FROM API IN 3.8 use ChannelView
     public Observable<Post> updateLastViewedAt(String teamId, String channelId) {
         return mApi.updatelastViewedAt(teamId, channelId);
+    }*/
+
+    public Observable<ChannelView> channelView(String teamId, ChannelView channelView) {
+        return mApi.channelView(teamId, channelView);
     }
 
     public Observable<Post> deletePost(String teamId, String channelId, String postId) {

@@ -13,6 +13,7 @@ import com.kilogramm.mattermost.model.entity.notifyProps.NotifyUpdate;
 import com.kilogramm.mattermost.model.entity.post.Post;
 import com.kilogramm.mattermost.model.entity.post.PostEdit;
 import com.kilogramm.mattermost.model.entity.user.User;
+import com.kilogramm.mattermost.model.entity.channel.ChannelView;
 import com.kilogramm.mattermost.model.fromnet.AutocompleteUsers;
 import com.kilogramm.mattermost.model.fromnet.ChannelWithMember;
 import com.kilogramm.mattermost.model.fromnet.ChannelsWithMembers;
@@ -209,13 +210,23 @@ public interface ApiMethod {
                               @Path("channelId") String channelId,
                               @Body Post post);
 
+    /* REMOVED FROM API IN 3.8 use ChannelView
     @Headers({
             "Accept: application/json",
             "X-Request-With: XMLHttpRequest",
             "Content-Type: application/json"})
     @POST("api/v3/teams/{teamId}/channels/{channelId}/update_last_viewed_at")
     Observable<Post> updatelastViewedAt(@Path("teamId") String teamId,
-                                        @Path("channelId") String channelId);
+                                        @Path("channelId") String channelId);*/
+
+    //update_last_viewed_at/set_last_viewed_at/set_active_channel replaced by /channels/view
+    @Headers({
+            "Accept: application/json",
+            "X-Request-With: XMLHttpRequest",
+            "Content-Type: application/json"})
+    @POST("api/v3/teams/{teamId}/channels/view")
+    Observable<ChannelView> channelView(@Path("teamId") String teamId,
+                                        @Body ChannelView channelView);
 
     @Headers({
             "Accept: application/json",
