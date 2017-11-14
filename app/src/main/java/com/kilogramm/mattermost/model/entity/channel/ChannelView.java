@@ -8,8 +8,9 @@ import com.google.gson.annotations.SerializedName;
 
 /**
  * Created by Christian on 13.11.2017.
+ *
+ * Class for providing a json body for the channel/view api-method
  */
-
 public class ChannelView{
 
     @SerializedName("channel_id")

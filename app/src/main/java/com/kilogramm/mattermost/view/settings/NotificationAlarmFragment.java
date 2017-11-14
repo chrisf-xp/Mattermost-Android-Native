@@ -21,7 +21,7 @@ public class NotificationAlarmFragment extends BaseFragment implements View.OnCl
     private FragmentAlarmNotificationBinding mBinding;
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) { // todo Bundle anschauen
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
 

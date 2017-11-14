@@ -148,14 +148,6 @@ public class NotificationPresenter extends BaseRxPresenter<NotificationActivity>
             mNotifyProps.setVibration("true");
     }
 
-    public void setSoundSetting(String setting) { //todo delete
-        mNotifyProps.setSound(setting);
-    }
-
-    public void setVibrationSetting(String setting) { // todo delete
-        mNotifyProps.setVibration(setting);
-    }
-
     public void setPushSetting(String push) {
         mNotifyProps.setPush(push);
     }
