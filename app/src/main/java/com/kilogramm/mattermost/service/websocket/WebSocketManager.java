@@ -28,6 +28,9 @@ public class WebSocketManager {
     private static final String HEADER_WEB_SOCKET = "Cookie";
     public static final int TIME_REPEAT_RECONNECT = 30 * 1000;
 
+    private static final String WEBSOCKET_FIRST = "wss://";
+    private static final String WEBSOCKET_LAST = "/api/v3/users/websocket";
+
     public static int seq_reply = 0;
 
     private static WebSocket webSocket = null;
@@ -73,7 +76,9 @@ public class WebSocketManager {
     public void create() {
         Log.d(TAG, "create");
         try {
-            webSocket = new WebSocketFactory().createSocket(MattermostApp.URL_WEB_SOCKET);
+            webSocket = new WebSocketFactory().createSocket(WEBSOCKET_FIRST
+                                + MattermostPreference.getInstance().getBaseUrl()
+                                + WEBSOCKET_LAST);  //MattermostApp.URL_WEB_SOCKET);
             setHeader(webSocket);
             webSocket.addListener(new MWebSocketListener() {
                 @Override
