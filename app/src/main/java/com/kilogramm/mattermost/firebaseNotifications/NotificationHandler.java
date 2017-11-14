@@ -35,7 +35,19 @@ import static android.support.v4.app.NotificationCompat.DEFAULT_SOUND;
 import static android.support.v4.app.NotificationCompat.DEFAULT_VIBRATE;
 
 /**
- * Created by Christian on 23.10.2017.
+ * Created by Christian (chrisf-xp) on 23.10.2017.
+ *
+ * This class handles notifications of type with data payload containing a type key with e.g.
+ * "message" as value, sent by your Mattermost-Server.
+ *
+ * Regarding Notification-Feature:
+ * The Mattermost-Server needs a Mattermost-Push-Proxy to forward the notifications to the
+ * Firebase-Cloud-Messaging servers. The Mattermost-Push-Proxy has to know the API-key of this app.
+ * If you compile this app yourself you have to register it to a firebase-account and insert the
+ * google-services.json into the app folder of this project. You also get the API-key for the push-
+ * proxy from you firebase-account.
+ *
+ *
  */
 
 public class NotificationHandler {
@@ -44,7 +56,7 @@ public class NotificationHandler {
     private Target mTarget; //for picture update
 
     private static int pendingNotificationsCount = 0;
-    private static List<String> lastFivePendingNoti = new LinkedList<>();
+    private static List<String> lastFivePendingNotification = new LinkedList<>();
     private Service service;
 
     private static final String TAG = "NOTIFICATION-HANDLER";
@@ -73,12 +85,10 @@ public class NotificationHandler {
     private static final String OR_ICON = "override_icon_url";
     private static final String FROM_WEBHOOK = "from_webhook";
 
-    private static final String DELIM = "in";
     private static final int TICKER_MESSAGE_LENGTH_MAX = 256;
     private static final int TICKER_MESSAGE_LENGTH_CUT = 64;
 
     private NotificationHandler(Service service){
-        //pendingNotificationsCount = 0;
         this.service = service;
     }
 
@@ -95,6 +105,9 @@ public class NotificationHandler {
         }
     }
 
+    /** Gets called when notification arrives and handles the Type of Notification
+     * @param data Map that contains all the data fields of the arrived Notification
+     */
     public void handleNotification(Map<String, String> data){
         //debug
         Log.d(TAG, "handle a Notification");
@@ -145,39 +158,6 @@ public class NotificationHandler {
 
     }
 
-    private void handleClearNotification(){
-        NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.cancel(MESSAGE_ID);
-        resetPendingNotificationsCount();
-        resetLastFivePendingNoti();
-    }
-
-    private void handleUpdateNotification(Map<String, String> data){
-        if (!data.containsKey(LINK)){
-            return;
-        }
-        String link = data.get(LINK);
-        String title = service.getResources().getString(R.string.notification_update);
-
-        //## Intent to open Link
-        Intent notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
-        notificationIntent.setData(Uri.parse(link));
-        PendingIntent pendingIntent = PendingIntent.getActivity(service.getApplicationContext(),
-                UPDATE_CODE, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext())
-                .setLargeIcon(BitmapFactory.decodeResource( service.getResources(), R.drawable.notification_icon))
-                .setSmallIcon(R.drawable.ic_mm_noti)
-                .setContentTitle(title)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true);
-        if (data.containsKey(MESSAGE)) builder.setContentText(data.get(MESSAGE));
-
-        Notification notification = builder.build();
-        NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(UPDATE_ID, notification);
-    }
-
     public void incrementPendingNotificationsCount(){
         pendingNotificationsCount++;
     }
@@ -185,15 +165,15 @@ public class NotificationHandler {
         pendingNotificationsCount = 0;
     }
     public void addPendingNotification(String line){
-        if (lastFivePendingNoti.size() < 5){
-            lastFivePendingNoti.add(line);
+        if (lastFivePendingNotification.size() < 5){
+            lastFivePendingNotification.add(line);
         }else {
-            lastFivePendingNoti.remove(0);
-            lastFivePendingNoti.add(line);
+            lastFivePendingNotification.remove(0);
+            lastFivePendingNotification.add(line);
         }
     }
-    public void resetLastFivePendingNoti(){
-        lastFivePendingNoti.clear();
+    public void resetLastFivePendingNotification(){
+        lastFivePendingNotification.clear();
     }
 
     private Notification buildMyNotification(String title, String message, String senderId, PictureUpdate picUpdate){
@@ -221,7 +201,16 @@ public class NotificationHandler {
         if (vibrationOn) alarmSetting |= DEFAULT_VIBRATE;
         if (soundOn) alarmSetting |= DEFAULT_SOUND;
         if (vibrationOn || soundOn) alarmSetting |= DEFAULT_LIGHTS;
-
+        // ### Big notifications: (android 4.1 and later)
+        NotificationCompat.InboxStyle bigStyle = new NotificationCompat.InboxStyle();
+        for (String line: lastFivePendingNotification){
+            bigStyle.addLine(line);
+        }
+        if (pendingNotificationsCount - lastFivePendingNotification.size() > 0){
+            bigStyle.setSummaryText("+" + (pendingNotificationsCount - lastFivePendingNotification.size())
+                    + " " + service.getResources().getString(R.string.notification_plus_x_more) );
+        }
+        // ### Set
         NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext())
                 .setNumber(pendingNotificationsCount)
                 .setSmallIcon(R.drawable.ic_mm_noti)
@@ -232,24 +221,12 @@ public class NotificationHandler {
                 .setContentText(message)
                 .setTicker(tickerMes)
                 .setContentIntent(intent)
-                .setDefaults(alarmSetting);
-
-        // ### Big notifications: (android 4.1 and later)
-        NotificationCompat.InboxStyle bigStyle = new NotificationCompat.InboxStyle();
-        for (String line: lastFivePendingNoti){
-            bigStyle.addLine(line);
-        }
-        if (pendingNotificationsCount - lastFivePendingNoti.size() > 0){
-            bigStyle.setSummaryText("+" + (pendingNotificationsCount - lastFivePendingNoti.size())
-                    + " " + service.getResources().getString(R.string.notification_plus_x_more) );
-        }
-        //bigStyle.setBigContentTitle(title);
-        builder.setStyle(bigStyle);
-
-        //todo
-        // show picture of sender // maybe only with direct messages
+                .setDefaults(alarmSetting)
+                .setStyle(bigStyle);
+        // ### Avatar Loading
+        // for future implementation: show picture of sender // maybe only with direct messages
         // picture of sender can sometimes be wrong with different requests at the same time,
-        // because we can't predict which thread gets done... so i should implement something to
+        // because we can't predict which thread gets done... so implement something to
         // stop old threads when a new one comes
         if (senderId != null){
              try{
@@ -271,7 +248,8 @@ public class NotificationHandler {
             @Override
             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                 builder.setLargeIcon(bitmap);
-                // send the notification again to update it w/ the right image
+                // send the notification again to update it w/ the right image, only when the
+                // previous notification was already sent
                 for (int sleepCount = 32; sleepCount < 4000; sleepCount*=2){
                     try{
                         Thread.sleep(sleepCount);
@@ -305,6 +283,9 @@ public class NotificationHandler {
                 + user.getLastPictureUpdate();
     }
 
+    /**Synchronized class for Notification Picture updating.
+     * Used for communication between this thread and the thread that tries to get the picture.
+     */
     private class PictureUpdate{
         private boolean notificationSent = false;
         public synchronized boolean isNotificationSent(){
@@ -313,5 +294,38 @@ public class NotificationHandler {
         public synchronized void setNotificationSent(){
             notificationSent = true;
         }
+    }
+
+    private void handleClearNotification(){
+        NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.cancel(MESSAGE_ID);
+        resetPendingNotificationsCount();
+        resetLastFivePendingNotification();
+    }
+
+    private void handleUpdateNotification(Map<String, String> data){
+        if (!data.containsKey(LINK)){
+            return;
+        }
+        String link = data.get(LINK);
+        String title = service.getResources().getString(R.string.notification_update);
+
+        //## Intent to open Link
+        Intent notificationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+        notificationIntent.setData(Uri.parse(link));
+        PendingIntent pendingIntent = PendingIntent.getActivity(service.getApplicationContext(),
+                UPDATE_CODE, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(service.getApplicationContext())
+                .setLargeIcon(BitmapFactory.decodeResource( service.getResources(), R.drawable.notification_icon))
+                .setSmallIcon(R.drawable.ic_mm_noti)
+                .setContentTitle(title)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+        if (data.containsKey(MESSAGE)) builder.setContentText(data.get(MESSAGE));
+
+        Notification notification = builder.build();
+        NotificationManager notificationManager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(UPDATE_ID, notification);
     }
 }
