@@ -28,7 +28,7 @@ public class MmFirebaseMessagingService extends FirebaseMessagingService {
         Log.i(TAG, "received");
 
         Map<String, String> data = remoteMessage.getData();
-        notificationHandler.handleNotification(data);
+        NotificationHandler.getInstance(this).handleNotification(data);
     }
 
     //TODO onMessageDelete()
