@@ -76,9 +76,9 @@ public class WebSocketManager {
     public void create() {
         Log.d(TAG, "create");
         try {
-            webSocket = new WebSocketFactory().createSocket(WEBSOCKET_FIRST
-                                + MattermostPreference.getInstance().getBaseUrl()
-                                + WEBSOCKET_LAST);  //MattermostApp.URL_WEB_SOCKET);
+            webSocket = new WebSocketFactory().createSocket(MattermostApp.URL_WEB_SOCKET); /*WEBSOCKET_FIRST
+                    + MattermostPreference.getInstance().getBaseUrl()
+                    + WEBSOCKET_LAST);  */
             setHeader(webSocket);
             webSocket.addListener(new MWebSocketListener() {
                 @Override
